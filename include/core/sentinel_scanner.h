@@ -1,5 +1,5 @@
 #include <string>
-using namespace std;
+//using namespace std;
 
 class SentinelScanner {
 public:
@@ -10,7 +10,7 @@ public:
     // Feed the next chunk. Returns text guaranteed NOT to be part of
     // the sentinel (safe to print immediately) and whether the
     // sentinel has now been fully seen.
-    Out feed(std::string chunk);
+    Out feed(std::string_view chunk);
 
     // Call once, after the stream ends, to release any text still
     // being held back.
