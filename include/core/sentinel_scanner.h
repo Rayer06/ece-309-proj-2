@@ -15,10 +15,11 @@ public:
     // Call once, after the stream ends, to release any text still
     // being held back.
     Out flush();
+    std::string pending_;   // holds back at most sentinel_.size() - 1
+    // trailing characters that could still
+    // become the start of the sentinel
 
 private:
     std::string sentinel_;
-    std::string pending_;   // holds back at most sentinel_.size() - 1
-                             // trailing characters that could still
-                             // become the start of the sentinel
+
 };

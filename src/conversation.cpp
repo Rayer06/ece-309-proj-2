@@ -93,10 +93,11 @@ void Conversation::append(Message m) {
         for (std::size_t i = 0; i < size_; i++) {
             data_[i] = data_tmp[i]; // copy array contents
         }
-        delete data_tmp; // delete old array
+        delete [] data_tmp; // delete old array
     }
     data_[size_] = m; // append message
     size_++; // update size
+
 }
 
 // get number of messages stored
@@ -107,7 +108,7 @@ std::size_t Conversation::size() const noexcept {
 // get a specific Message (check bounds) return null if out of range
 const Message& Conversation::at(std::size_t i) const {
     if (i >= size_) {
-        throw std::out_of_range("OOB"); // throw out of bounds exception
+        throw std::out_of_range("Value entered is out of bounds"); // throw out of bounds exception
     }
     return data_[i];
 }

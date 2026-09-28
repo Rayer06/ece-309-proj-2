@@ -13,15 +13,10 @@ SentinelScanner::SentinelScanner(std::string sentinel) {
 // the sentinel (safe to print immediately) and whether the
 // sentinel has now been fully seen.
 SentinelScanner::Out SentinelScanner::feed(std::string_view chunk) {
-    pending_.append(chunk); // adds entire chunk to string
-    if (pending_.size() > sentinel_.size()-1) {
-        std::size_t charsToRemove = pending_.size() - (sentinel_.size() - 1);
-        pending_.erase(0, charsToRemove); // if too long, remove characters
-    }
-
     bool sentinel_start = false;
     std::size_t last_match = 0;
     int where_match = 0;
+    std::size_t i;
 
     Out put; // create new output container
     put.safe_text = "";
@@ -48,67 +43,47 @@ SentinelScanner::Out SentinelScanner::feed(std::string_view chunk) {
     // if last matched iteration does not hit end of string, sentinel not found,
     // all text is safe text
 
-    for (std::size_t i = 0; i < sentinel_.size(); i++) {
-        if (tmp.find(sentinel_.substr(0, i+1))) {
+    for (i = 0; i < sentinel_.size(); i++) {
+        if (tmp.find(sentinel_.substr(0, i+1)) != std::string::npos) {
             where_match = tmp.find(sentinel_.substr(0, i+1));
             sentinel_start = true;
             last_match = i;
         }
-        if (sentinel_start == false) {
-            put.safe_text.append(tmp);
-            put.sentinel_found = false;
-        }
-        if ((sentinel_start == true) && (last_match == tmp.size()-1)) {
-            put.safe_text.append(tmp.substr(0, where_match));
-            put.sentinel_found = true;
-        }
-        if ((sentinel_start == true) && (last_match != tmp.size()-1)) {
-            if (where_match + i == tmp.size()) {
-                put.safe_text.append(tmp.substr(0, where_match));
-            } else {
-                put.safe_text.append(tmp);
-            }
-            put.sentinel_found = false;
-        }
     }
-    return put;
-}
-/*
-    for (int i = 0; i < tmp.size(); i++)
-        if (sentinel_so_far_.empty()) { // regular string mode
-            if (tmp[i] != '<') {
-                put.safe_text.append(1, tmp[i]);
-            } else {
-                sentinel_so_far_.append(1, tmp[i]);
-            }
-
-
-
-
-            // sentinel match search mode
-            if (tmp[i] == sentinel_[sentinel_so_far_.size()]) { // if continues matching
-                sentinel_so_far_.append(1, tmp[i]);
-            } else { // if match breaks eg "<|end_w"
-                put.safe_text.append(sentinel_so_far_);
-                sentinel_so_far_.clear();
-                put.safe_text.append(1, tmp[i]);
-            }
-            // if fully matched
-            if (tmp.find(sentinel_)) {
-
-            }
-
+    // no portion of sentinel found
+    if (sentinel_start == false) {
+        put.safe_text.append(tmp);
+        put.sentinel_found = false;
+    }
+    // Whole sentinel found
+    if ((sentinel_start == true) && (last_match == sentinel_.size()-1)) {
+        put.safe_text.append(tmp.substr(0, where_match));
+        put.sentinel_found = true;
+        pending_.clear();
+    }
+    // Part of sentinel or false match
+    if ((sentinel_start == true) && (last_match != sentinel_.size()-1)) {
+        if (where_match + last_match == tmp.size()-1) {
+            put.safe_text.append(tmp.substr(0, where_match));
+            pending_.append(tmp.substr(where_match + pending_.size()));
+        } else {
+            put.safe_text.append(tmp);
         }
+        put.sentinel_found = false;
+    }
+    if (pending_.size() > sentinel_.size()-1) {
+        std::size_t charsToRemove = pending_.size() - (sentinel_.size() - 1);
+        pending_.erase(0, charsToRemove); // if too long, remove characters
+    }
 
     return put;
-
 }
-*/
+
 // Call once, after the stream ends, to release any text still
 // being held back.
 SentinelScanner::Out SentinelScanner::flush() {
     Out put;
-    put.safe_text = pending_;
+    put.safe_text = "";
     put.sentinel_found = false;
     return put;
 }
